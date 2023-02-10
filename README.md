@@ -6,7 +6,11 @@ grammar in the Swift programming language.
 The 
 
 **Disclaimer**: This code has unit tests but should not be considered 
-production-ready without further analysis and testing. 
+production-ready without further analysis and testing.
+
+Known issues:
+- The string literal token in parsed expressions only contains the literal 
+  representation, not an actual string value yet.
 
 ## References
 
