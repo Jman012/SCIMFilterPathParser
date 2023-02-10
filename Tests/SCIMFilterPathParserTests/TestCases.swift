@@ -305,6 +305,8 @@ let testCases_FilterExpression: [(FilterExpression, String)] = [
 let testCases_PathExpression: [(PathExpression, String)] = [
 	(PathExpression.attributePath(.init(attributeName: "userName")),
 	 "userName"),
+	(PathExpression.attributePath(.init(attributeName: "name", subAttributeName: "familyName")),
+	 "name.familyName"),
 	(PathExpression.valuePathExpression(.init(
 		attributePath: .init(attributeName: "emails"),
 		valueFilterExpression: .init(
