@@ -1,0 +1,19 @@
+; https://www.rfc-editor.org/rfc/rfc3986#appendix-A
+
+pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+
+fragment      = *( pchar / "/" / "?" )
+
+pct-encoded   = "%" HEXDIG HEXDIG
+
+unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+				/ "*" / "+" / "," / ";" / "="
+
+; https://www.rfc-editor.org/rfc/rfc3986#appendix-D.2
+
+alphanum      = ALPHA / DIGIT
+
+
+; Notes
+; - No changes from original

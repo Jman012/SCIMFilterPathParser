@@ -1,0 +1,76 @@
+; https://www.rfc-editor.org/rfc/rfc7644#section-3.4.2.2
+
+FILTER    = attrExp / logExp / valuePath / ["not" [SP]] "(" FILTER ")"
+
+			; Modification from original: added optional SP between "not" and "("
+			; See RFC 7644 Errata 7319: https://www.rfc-editor.org/errata/eid7319
+
+valuePath = attrPath "[" valFilter "]"
+			; FILTER uses sub-attributes of a parent attrPath
+
+valFilter = attrExp / valLogExp / ["not" [SP]] "(" valFilter ")"
+	
+			; Modification from original: replaced logExp with valLogExp
+			; See RFC 7644 Errata 4690: https://www.rfc-editor.org/errata/eid4690
+			; Modification from original: added optional SP between "not" and "("
+			; See RFC 7644 Errata 7319: https://www.rfc-editor.org/errata/eid7319
+
+valLogExp = attrExp SP ("and" / "or") SP valFilter valLogExp'
+			/ ["not" [SP]] "(" valFilter ")" SP ("and" / "or") SP valFilter valLogExp'
+
+valLogExp'= SP ("and" / "or") SP valFilter valLogExp'
+			/ ϵ
+
+			; Modification from original: added new non-terminal node valLogExp
+			; See RFC 7644 Errata 4690: https://www.rfc-editor.org/errata/eid4690
+			; Modification from Errata 4690: Instead of each side being an attrExpr,
+			; each side is a valFilter. Otherwise, the example filter
+			; `emails[type eq "work" or (type eq "home" and value ew "@example.com")]`
+			; would be impossible, since it'd be impossible to match the open paren.
+			; Modification from previous: eliminate left recursion and introduce
+			; the new non-terminal node valLogExp'.
+
+attrExp   = (attrPath SP "pr") /
+			(attrPath SP compareOp SP compValue)
+
+logExp    = attrExp SP ("and" / "or") SP FILTER logExp'
+			/ valuePath SP ("and" / "or") SP FILTER logExp'
+			/ ["not" [SP]] "(" FILTER ")" SP ("and" / "or") SP FILTER logExp'
+
+logExp'   = SP ("and" / "or") SP FILTER logExp'
+			/ ϵ
+			
+			; Modification from original: eliminate left recursion and introduce
+			; the new non-terminal node logExp'.
+
+compValue = false / null / true / number / string
+			; rules from JSON (RFC 7159)
+
+compareOp = "eq" / "ne" / "co" /
+				"sw" / "ew" /
+				"gt" / "lt" /
+				"ge" / "le"
+
+attrPath  = [namestring ":"] ATTRNAME *1subAttr
+			; SCIM attribute name
+			; namestring is from URN RFC 8141
+			
+			; Modification from original: changed open-ended URI to more specific
+			; namestring from the URN RFC, plus the relevant comment. The RFC
+			; does specifically indicate that a full URI (such as a URL) is not
+			; allowed.
+
+ATTRNAME  = ALPHA *(nameChar)
+
+nameChar  = "-" / "_" / DIGIT / ALPHA
+
+subAttr   = "." ATTRNAME
+			; a sub-attribute of a complex attribute
+
+
+; https://www.rfc-editor.org/rfc/rfc7644#section-3.5.2
+
+PATH      = attrPath / valuePath [subAttr] / attrExp
+
+			; Modification from original: added attrExp as an option.
+			; See RFC 7644 Errata 7122: https://www.rfc-editor.org/errata/eid7122
