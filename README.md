@@ -1,9 +1,7 @@
 # SCIM Filter & Path Parser
 
-This is an exercise in building a parser for the SCIM protocol filters and paths
-grammar in the Swift programming language.
-
-The 
+This is an exercise in building a parser for the [SCIM](https://www.simplecloud.info/)
+protocol filters and paths grammar in the Swift programming language.
 
 **Disclaimer**: This code has unit tests but should not be considered 
 production-ready without further analysis and testing.
