@@ -59,14 +59,15 @@ final class RecursiveDescentPredictiveBaseTests: XCTestCase {
 	}
 	
 	func testParseLogicalOperator() throws {
-		let parser = try RecursiveDescentPredictiveBase(filter: "or and")
+		let parser = try RecursiveDescentPredictiveBase(filter: "or and test")
 		
 		var logicalOp = try parser.parseLogicalOperator()
 		XCTAssertEqual(logicalOp, .or)
 		XCTAssertNoThrow(try parser.expect(token: .space))
 		logicalOp = try parser.parseLogicalOperator()
 		XCTAssertEqual(logicalOp, .and)
-		XCTAssertNoThrow(try parser.expect(token: .eof))
+		XCTAssertNoThrow(try parser.expect(token: .space))
+		XCTAssertThrowsError(try parser.parseLogicalOperator())
 		
 		for (expectedExpr, scimFilterString) in testCases_LogicalOperator {
 			let parser = try RecursiveDescentPredictiveBase(filter: scimFilterString)
@@ -127,6 +128,9 @@ final class RecursiveDescentPredictiveBaseTests: XCTestCase {
 		XCTAssertTrue(try parser.attempt(token: .space))
 		XCTAssertThrowsError(try parser.parseComparativeOperator())
 		
+		let badParser = try RecursiveDescentPredictiveBase(filter: "(")
+		XCTAssertThrowsError(try badParser.parseComparativeOperator())
+		
 		for (expectedExpr, scimFilterString) in testCases_ComparativeOperator {
 			let parser = try RecursiveDescentPredictiveBase(filter: scimFilterString)
 			let compOp = try parser.parseComparativeOperator()
@@ -153,6 +157,11 @@ final class RecursiveDescentPredictiveBaseTests: XCTestCase {
 		XCTAssertEqual(try parser.parseComparativeValue(), .string("", #""test\"test""#))
 		XCTAssertNoThrow(try parser.expect(token: .space))
 		XCTAssertEqual(try parser.parseComparativeValue(), .false)
+		
+		var badParser = try RecursiveDescentPredictiveBase(filter: "eq")
+		XCTAssertThrowsError(try badParser.parseComparativeValue())
+		badParser = try RecursiveDescentPredictiveBase(filter: "(")
+		XCTAssertThrowsError(try badParser.parseComparativeValue())
 		
 		for (expectedExpr, scimFilterString) in testCases_ComparativeValue {
 			let parser = try RecursiveDescentPredictiveBase(filter: scimFilterString)

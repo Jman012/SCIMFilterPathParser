@@ -48,9 +48,9 @@ extension RecursiveDescentPredictiveBase {
 		if currentToken == token {
 			try consumeCurrentToken()
 			return true
-		} else {
-			return false
 		}
+		
+		return false
 	}
 	
 	/// Parses an `"and" / "or"` as a helper method. This is not a symbol in the
