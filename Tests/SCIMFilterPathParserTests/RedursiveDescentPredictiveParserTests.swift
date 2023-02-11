@@ -1,10 +1,10 @@
 import XCTest
 @testable import SCIMFilterPathParser
 
-final class RecursiveDescentBacktrackingParserTests: XCTestCase {	
-	func testParseAttributeExpression() throws {		
+final class RecursiveDescentPredictiveParserTests: XCTestCase {
+	func testParseAttributeExpression() throws {
 		for (expectedExpr, scimFilterString) in testCases_AttributeExpression {
-			let parser = try RecursiveDescentBacktrackingParser(filter: scimFilterString)
+			let parser = try RecursiveDescentPredictiveParser(filter: scimFilterString)
 			let attrExp = try parser.parseAttributeExpression()
 			XCTAssertEqual(attrExp, expectedExpr, scimFilterString)
 			XCTAssertNoThrow(try parser.expect(token: .eof))
@@ -13,7 +13,7 @@ final class RecursiveDescentBacktrackingParserTests: XCTestCase {
 	
 	func testParseValueFilterList() throws {
 		for (expectedExpr, scimFilterString) in testCases_ValueFilterListExpression {
-			let parser = try RecursiveDescentBacktrackingParser(filter: scimFilterString)
+			let parser = try RecursiveDescentPredictiveParser(filter: scimFilterString)
 			let valFilter = try parser.parseValueFilter()
 			XCTAssertEqual(valFilter, expectedExpr, scimFilterString)
 			XCTAssertNoThrow(try parser.expect(token: .eof))
@@ -22,7 +22,7 @@ final class RecursiveDescentBacktrackingParserTests: XCTestCase {
 	
 	func testParseValuePath() throws {
 		for (expectedExpr, scimFilterString) in testCases_ValuePathExpression {
-			let parser = try RecursiveDescentBacktrackingParser(filter: scimFilterString)
+			let parser = try RecursiveDescentPredictiveParser(filter: scimFilterString)
 			let valFilter = try parser.parseValuePath()
 			XCTAssertEqual(valFilter, expectedExpr, scimFilterString)
 			XCTAssertNoThrow(try parser.expect(token: .eof))
@@ -31,14 +31,14 @@ final class RecursiveDescentBacktrackingParserTests: XCTestCase {
 	
 	func testParseFilterList() throws {
 		for (expectedExpr, scimFilterString) in testCases_FilterExpression {
-			let parser = try RecursiveDescentBacktrackingParser(filter: scimFilterString)
+			let parser = try RecursiveDescentPredictiveParser(filter: scimFilterString)
 			let valFilter = try parser.parseFilterInternal()
 			XCTAssertEqual(valFilter, expectedExpr, scimFilterString)
 			XCTAssertNoThrow(try parser.expect(token: .eof))
 		}
 		
 		for (expectedExpr, scimFilterString) in testCases_FilterExpression {
-			let parser = try RecursiveDescentBacktrackingParser(filter: scimFilterString)
+			let parser = try RecursiveDescentPredictiveParser(filter: scimFilterString)
 			let valFilter = try parser.parseFilter()
 			XCTAssertEqual(valFilter, expectedExpr, scimFilterString)
 			XCTAssertNoThrow(try parser.expect(token: .eof))
@@ -46,13 +46,11 @@ final class RecursiveDescentBacktrackingParserTests: XCTestCase {
 	}
 	
 	func testParsePath() throws {
-		let parser = try RecursiveDescentBacktrackingParser(filter: "emails.")
-		XCTAssertThrowsError(try parser.parsePath()) { error in
-			XCTAssertTrue((error as? RecursiveDescentBacktrackingParser.ParserError)?.message.contains("Could not parse the path (no viable option was found)") ?? false)
-		}
+		let parser = try RecursiveDescentPredictiveParser(filter: "emails.")
+		XCTAssertThrowsError(try parser.parsePath())
 		
 		for (expectedExpr, scimFilterString) in testCases_PathExpression {
-			let parser = try RecursiveDescentBacktrackingParser(filter: scimFilterString)
+			let parser = try RecursiveDescentPredictiveParser(filter: scimFilterString)
 			let valFilter = try parser.parsePath()
 			XCTAssertEqual(valFilter, expectedExpr, scimFilterString)
 			XCTAssertNoThrow(try parser.expect(token: .eof))
@@ -81,7 +79,7 @@ final class RecursiveDescentBacktrackingParserTests: XCTestCase {
 		]
 		
 		for filter in filters {
-			let parser = try RecursiveDescentBacktrackingParser(filter: filter)
+			let parser = try RecursiveDescentPredictiveParser(filter: filter)
 			let filterExpression = try parser.parseFilter()
 			XCTAssertEqual(filter, filterExpression.scimFilterString)
 		}

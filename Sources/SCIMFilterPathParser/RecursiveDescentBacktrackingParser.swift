@@ -2,26 +2,31 @@ import Foundation
 
 // TODO: Detect and error upon ATTRNAME.subAttr[valFilter]
 
-public class RecursiveDescentBacktrackingParser {
+// Uses SCIM_RFC_7644_LeftRecursionEliminatedV2.abnf
+
+/// 
+public class RecursiveDescentBacktrackingParser: RecursiveDescentPredictiveBase, Parser {
 	
-	let lexer: Lexer
-	var currentTokenIndex: String.Index
-	var currentToken: Token
 	private(set) var attemptParseTokenStack: [(String.Index, Token)] = []
 	
-	public init(filter: String) throws {
-		lexer = Lexer(inputString: filter)
-		
-		currentTokenIndex = lexer.index
-		currentToken = try lexer.next()
-	}
-	
+	/// Parses a filter from the grammar.
+	/// This expects the entire input string to be parsed, and will fail if no
+	/// EOF is encountered at the end.
+	///
+	/// Symbol: `FILTER`
+	/// Type: Backtracking
 	public func parseFilter() throws -> FilterExpression {
 		let filter = try parseFilterInternal()
 		try expect(token: .eof)
 		return filter
 	}
 	
+	/// Parses a path from the grammar.
+	/// This expects the entire input string to be parsed, and will fail if no
+	/// EOF is encountered at the end.
+	///
+	/// Symbol: `PATH`
+	/// Type: Backtracking
 	public func parsePath() throws -> PathExpression {
 		if let valuePath = attemptParse({ try parseValuePath() }) {
 			// Try valuePath first, since it's the longest and most complex
@@ -44,36 +49,8 @@ public class RecursiveDescentBacktrackingParser {
 	}
 }
 
-// Error handling
-extension RecursiveDescentBacktrackingParser {
-	struct ParserError: Error {
-		let message: String
-	}
-}
-
 // Internal helper methods
 extension RecursiveDescentBacktrackingParser {
-	func consumeCurrentToken() throws {
-		currentTokenIndex = lexer.index
-		currentToken = try lexer.next()
-	}
-	
-	func expect(token: Token) throws {
-		guard currentToken == token else {
-			throw ParserError(message: "Expected a \(token) at \(currentTokenIndex), but instead found a \(currentToken)")
-		}
-		try consumeCurrentToken()
-	}
-	
-	func attempt(token: Token) throws -> Bool {
-		if currentToken == token {
-			try consumeCurrentToken()
-			return true
-		} else {
-			return false
-		}
-	}
-	
 	func attemptParse<T>(_ closure: () throws -> T) -> T? {
 		lexer.pushSnapshot()
 		attemptParseTokenStack.append((currentTokenIndex, currentToken))
@@ -99,6 +76,13 @@ extension RecursiveDescentBacktrackingParser {
 
 // Internal node parsers
 extension RecursiveDescentBacktrackingParser {
+	
+	/// Parses a filter from the grammar.
+	/// This does not expect an EOF at the end, so that it can be used for
+	/// recursive parsing from `parseFilterValue`.
+	///
+	/// Symbol: `FILTER`
+	/// Type: Backtracking
 	func parseFilterInternal() throws -> FilterExpression {
 		let parseNext: () throws -> FilterListExpressionContinued = {
 			try self.expect(token: .space)
@@ -118,6 +102,10 @@ extension RecursiveDescentBacktrackingParser {
 		return filterList.toFilterExpression()
 	}
 	
+	/// Parses a filter value from the grammar.
+	///
+	/// Symbol: `filterValue`
+	/// Type: Backtracking
 	func parseFilterOption() throws -> FilterValueExpression {
 		if let attrExp = attemptParse({ try parseAttributeExpression() }) {
 			// Try attrExp
@@ -145,8 +133,21 @@ extension RecursiveDescentBacktrackingParser {
 		}
 	}
 	
-	func parseValuePath() throws -> ValuePathExpression {
-		let attrPath = try parseAttributePath()
+	/// Parses a value path from the grammar.
+	/// Allows for a pre-parsed attribute path beginning symbol to be used.
+	///
+	/// Symbol: `valuePath`
+	/// Type: Backtracking
+	func parseValuePath(withPreParsedAttrPath preParsedAttrPath: AttributePath? = nil) throws -> ValuePathExpression {
+		
+		// Either use a pre-parsed attrPath, or parse it ourselves
+		let attrPath: AttributePath
+		if let preParsedAttrPath = preParsedAttrPath {
+			attrPath = preParsedAttrPath
+		} else {
+			attrPath = try parseAttributePath()
+		}
+		
 		try expect(token: .openBracket)
 		let valFilter = try parseValueFilter()
 		try expect(token: .closeBracket)
@@ -154,6 +155,10 @@ extension RecursiveDescentBacktrackingParser {
 		return ValuePathExpression(attributePath: attrPath, valueFilterExpression: valFilter)
 	}
 	
+	/// Parses a value filter from the grammar.
+	///
+	/// Symbol: `valFilter`
+	/// Type: Backtracking
 	func parseValueFilter() throws -> ValueFilterListExpression {
 		let parseNext: () throws -> ValueFilterListExpressionContinued = {
 			try self.expect(token: .space)
@@ -172,6 +177,10 @@ extension RecursiveDescentBacktrackingParser {
 		return .init(start: valFilterOption, continued: continued)
 	}
 	
+	/// Parses a value filter expression from the grammar.
+	///
+	/// Symbol: `valFilterValue`
+	/// Type: Backtracking
 	func parseValueFilterListOption() throws -> ValueFilterValueExpression {
 		if let attrExp = attemptParse({ try parseAttributeExpression() }) {
 			// Try attrExp
@@ -196,6 +205,11 @@ extension RecursiveDescentBacktrackingParser {
 		}
 	}
 	
+	/// Parses an attribute expression from the grammar.
+	/// Allows for a pre-parsed attribute path beginning symbol to be used.
+	///
+	/// Symbol: `attrExp`
+	/// Type: Backtracking
 	func parseAttributeExpression() throws -> AttributeExpression {
 		let attrPath = try parseAttributePath()
 		
@@ -212,94 +226,6 @@ extension RecursiveDescentBacktrackingParser {
 				comparativeValue: compValue))
 		} else {
 			throw ParserError(message: "Expected an attribute operator at \(currentTokenIndex), but instead found a \(currentToken)")
-		}
-	}
-	
-	func parseComparativeValue() throws -> ComparativeValue {
-		switch currentToken {
-		case let .keywordIdentifier(keyword):
-			switch keyword {
-			case .false:
-				try consumeCurrentToken()
-				return .false
-			case .null:
-				try consumeCurrentToken()
-				return .null
-			case .true:
-				try consumeCurrentToken()
-				return .true
-			default:
-				throw ParserError(message: "Expected a comparative value (number, string, or constant value) at \(currentTokenIndex), but instead found a \(currentToken)")
-			}
-		case let .numberLiteral(numLiteral):
-			try consumeCurrentToken()
-			return .number(numLiteral)
-		case let .stringLiteral(stringLiteral):
-			try consumeCurrentToken()
-			return .string("", stringLiteral) // TODO
-		default:
-			throw ParserError(message: "Expected a comparative value (number, string, or constant value) at \(currentTokenIndex), but instead found a \(currentToken)")
-		}
-	}
-	
-	func parseComparativeOperator() throws -> ComparativeOperator {
-		switch currentToken {
-		case let .keywordIdentifier(keyword):
-			guard let compOp = ComparativeOperator(rawValue: keyword.rawValue) else {
-				throw ParserError(message: "Expected a comparative operator at \(currentTokenIndex), but instead found a \(currentToken)")
-			}
-			try consumeCurrentToken()
-			return compOp
-		default:
-			throw ParserError(message: "Expected a comparative operator at \(currentTokenIndex), but instead found a \(currentToken)")
-		}
-	}
-	
-	func parseAttributePath() throws -> AttributePath {
-		switch currentToken {
-		case let .urnIdentifier(urnString):
-			try consumeCurrentToken() // Consume the urn
-			try expect(token: .colon)
-			let attrName = try parseAttributeIdentifier()
-			
-			if try attempt(token: .dot) {
-				let subAttrName = try parseAttributeIdentifier()
-				return AttributePath(schemaUrn: urnString, attributeName: attrName, subAttributeName: subAttrName)
-			} else {
-				return AttributePath(schemaUrn: urnString, attributeName: attrName, subAttributeName: nil)
-			}
-		case let .attributeIdentifier(attrName):
-			try consumeCurrentToken() // Consume the attrName
-			
-			if try attempt(token: .dot) {
-				let subAttrName = try parseAttributeIdentifier()
-				return AttributePath(schemaUrn: nil, attributeName: attrName, subAttributeName: subAttrName)
-			} else {
-				return AttributePath(schemaUrn: nil, attributeName: attrName, subAttributeName: nil)
-			}
-		default:
-			throw ParserError(message: "Expected a URN or an attribute identifier at \(currentTokenIndex), but instead found a \(currentToken)")
-		}
-	}
-	
-	func parseAttributeIdentifier() throws -> String {
-		guard case let .attributeIdentifier(attrName) = currentToken else {
-			throw ParserError(message: "Expected an attribute identifier at \(currentTokenIndex), but instead found a \(currentToken)")
-		}
-		try consumeCurrentToken()
-		return attrName
-	}
-	
-	func parseLogicalOperator() throws -> LogicalOperator {
-		switch currentToken {
-		case .keywordIdentifier(.and):
-			try consumeCurrentToken()
-			return .and
-		case .keywordIdentifier(.or):
-			try consumeCurrentToken()
-			return .or
-		default:
-			throw ParserError(message: "Expected a logical operator at \(currentTokenIndex), but found a \(currentToken) instead.")
 		}
 	}
 }
