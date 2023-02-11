@@ -380,40 +380,11 @@ this project.
 Some implementation differences/trade-offs:
 
 | Area | Backtracking | Predictive |
-| Difficulty | Because Backtracking can simply try one path then the next upon
-failure, it is fairly straightforward to write code that matches the grammar. |
-A Predictive parser has to know what the "first set" tokens are for a symbol in
-the grammar, in order to know which function to descend into properly, when
-presented with a path. This implementation has internal comments in order to show
-how the first set tokens were determined for each path for required symbols, and
-leads to some extra complexity. |
-| Readability | Backtracking appears to be more readable and straightforward to 
-understand. As long as the path attempts are in a failable function, it can 
-attempt each function and go on to the next. This leads to leaner code that very
-closely resembles the grammar without much extra to look at. | Predictive is still
-quite readable, however the existence of the first set token checks adds a bit of
-extra content to the code. This extra checking code surrounds the descent method
-calls. |
-| Error Handling | Error handling may be more vague in a Backtracking parser. 
-Upon the choice of a path, it is possible that no path succeeds and thus a generic
-error message about not recognizing any path has to be produced. That bubbles up
-to the top of the parser in this grammar (`FILTER` and `PATH`, the topmost symbols,
-both contain different parsing paths). It is possible that the grammar went fairly
-deep into one path before failing, and that error message would be pertinent to
-show, but knowing which path's error to show can be difficult. | A Predictive
-parser is able to much more explicitly report errors, because it knows which path
-the input went down more exactly and can report what it expected and what it instead
-found with more certaintty. This is because it is not blindly attempting different
-parsing paths. |
-| Efficiency | Due to the nature of attempting different paths one at a time, and
-needing to backtrack to an earlier state before attempting a different path, a
-Backtracking parser is naturally less efficient. Especially when a failed path
-could have gone quite deep and wasted a lot of computational cycles. | A predictive
-parser, on the other hand, only ever goes forwards with certainty on each path
-chosen in the grammar. This wastes fewer cycles, and without much extra overhead
-for predicting the right paths. Noteworthy, though, is the fact that SCIM 
-filters/paths are quite small and the difference with backtracking is likely
-negligible in real world scenarios. |
+| ---- | ------------ | ---------- |
+| Difficulty | Because Backtracking can simply try one path then the next upon failure, it is fairly straightforward to write code that matches the grammar. | A Predictive parser has to know what the "first set" tokens are for a symbol in the grammar, in order to know which function to descend into properly, when presented with a path. This implementation has internal comments in order to show how the first set tokens were determined for each path for required symbols, and leads to some extra complexity. |
+| Readability | Backtracking appears to be more readable and straightforward to understand. As long as the path attempts are in a failable function, it can attempt each function and go on to the next. This leads to leaner code that very closely resembles the grammar without much extra to look at. | Predictive is still quite readable, however the existence of the first set token checks adds a bit of extra content to the code. This extra checking code surrounds the descent method calls. |
+| Error Handling | Error handling may be more vague in a Backtracking parser. Upon the choice of a path, it is possible that no path succeeds and thus a generic error message about not recognizing any path has to be produced. That bubbles up to the top of the parser in this grammar (`FILTER` and `PATH`, the topmost symbols, both contain different parsing paths). It is possible that the grammar went fairly deep into one path before failing, and that error message would be pertinent to show, but knowing which path's error to show can be difficult. | A Predictive parser is able to much more explicitly report errors, because it knows which path the input went down more exactly and can report what it expected and what it instead found with more certaintty. This is because it is not blindly attempting different parsing paths. |
+| Efficiency | Due to the nature of attempting different paths one at a time, and needing to backtrack to an earlier state before attempting a different path, a Backtracking parser is naturally less efficient. Especially when a failed path could have gone quite deep and wasted a lot of computational cycles. | A predictive parser, on the other hand, only ever goes forwards with certainty on each path chosen in the grammar. This wastes fewer cycles, and without much extra overhead for predicting the right paths. Noteworthy, though, is the fact that SCIM filters/paths are quite small and the difference with backtracking is likely negligible in real world scenarios. |
 
 #### Recusive Ascent/Bottom-Up Parser
 
