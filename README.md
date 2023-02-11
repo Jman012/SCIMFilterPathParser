@@ -9,33 +9,34 @@ production-ready without further analysis and testing.
 Known issues:
 - The string literal token in parsed expressions only contains the literal 
   representation, not an actual string value yet.
+- Some grammatically valid but illegal filters can be created (`ATTRNAME.subAttr[valFilter]`) 
 
 ## References
 
 The grammar is sourced primarily from
 
-- SCIM Protocol Specification [RFC 7644](https://www.rfc-editor.org/rfc/rfc7644) 
-  - Filtering [Section 3.4.2.2](https://www.rfc-editor.org/rfc/rfc7644#section-3.4.2.2)
-  - Modifying with PATCH [Section 3.5.2](https://www.rfc-editor.org/rfc/rfc7644#section-3.5.2)
+- [RFC 7644](https://www.rfc-editor.org/rfc/rfc7644) SCIM Protocol Specification 
+  - [Section 3.4.2.2](https://www.rfc-editor.org/rfc/rfc7644#section-3.4.2.2) Filtering
+  - [Section 3.5.2](https://www.rfc-editor.org/rfc/rfc7644#section-3.5.2) Modifying with PATCH
 
 With additional grammar specificatons and information from
 
-- JSON Data Interchange Format [RFC 7159](https://www.rfc-editor.org/rfc/rfc7159)
+- [RFC 7159](https://www.rfc-editor.org/rfc/rfc7159) JSON Data Interchange Format
   - Referred to in the SCIM filter/path grammar for value literals.
-  - Values [Section 3](https://www.rfc-editor.org/rfc/rfc7159#section-3)
-  - Numbers [Section 6](https://www.rfc-editor.org/rfc/rfc7159#section-6)
-  - Strings [Section 7](https://www.rfc-editor.org/rfc/rfc7159#section-7)
-- URI Generic Syntax [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986)
+  - [Section 3](https://www.rfc-editor.org/rfc/rfc7159#section-3) Values
+  - [Section 6](https://www.rfc-editor.org/rfc/rfc7159#section-6) Numbers
+  - [Section 7](https://www.rfc-editor.org/rfc/rfc7159#section-7) Strings
+- [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986) URI Generic Syntax
   - Referred to in the official SCIM filter/path grammar for URN identifier prefixes.
   - Not used in revised grammar in this project.
-  - Collected ABNF for URI [Appendix A](https://www.rfc-editor.org/rfc/rfc3986#appendix-A)
-- URN Syntax [RFC 2141](https://www.rfc-editor.org/rfc/rfc2141)
+  - [Appendix A](https://www.rfc-editor.org/rfc/rfc3986#appendix-A) Collected ABNF for URI
+- [RFC 2141](https://www.rfc-editor.org/rfc/rfc2141) URN Syntax
   - Originally referred to from RFC 3986, but obsoleted by the preferred RFC 8141 below.
-- URNs [RFC 8141](https://www.rfc-editor.org/rfc/rfc8141.html)
+- [RFC 8141](https://www.rfc-editor.org/rfc/rfc8141.html) URNs
   - Latest and more correct syntax for URNs, obsoleting RFC 2141 above.
   - Used in revised grammar in this project.
-  - URN Syntax [Section 2](https://www.rfc-editor.org/rfc/rfc8141.html#section-2)
-- SCIM Core Schema [RFC 7643](https://www.rfc-editor.org/rfc/rfc7643)
+  - [Section 2](https://www.rfc-editor.org/rfc/rfc8141.html#section-2) URN Syntax
+- [RFC 7643](https://www.rfc-editor.org/rfc/rfc7643) SCIM Core Schema
   - Additional context for the reasoning behind the specified SCIM filter/path grammar.
 
 ## Grammar
@@ -362,12 +363,56 @@ the parser itself was able to stay fairly straightforward. There are a set of
 helper methods to handle common/simple operations more succinctly, and then a
 set of methods that correlate closely to each nonterminal symbol in the grammar.
 
-#### Recursive Descent Lookahead Parser
+#### Recursive Descent Predictive Parser
 
-There are plans to make a lookahead, as opposed to backtracking, parser as well.
-It would likely be the new "base" parser, which the backtracking parser can
-extend off of and redo some of the methods to be backtracking at a higher level,
-while leaving the simpler parsing methods on this base class for lookahead parsing.
+This predictive parser is the second parser written for this project. As opposed
+to a backtracking parser, a predictive parser does not attempt different paths
+in a grammar and backtrack to a known good state before trying another path.
+
+Instead, it will look at the current k (where k >= 1) tokens to predict which
+path is correct. LL(1) grammars, for instance, only need to look one token at
+most in order to determine which path to take. LL(k) tokens might need to look up
+to k tokens ahead to determine the path, which might be many tokens.
+
+I believe that the revised, left-recursion-eliminated grammar is LL(1), used in
+this project.
+
+Some implementation differences/trade-offs:
+| Area | Backtracking | Predictive |
+| Difficulty | Because Backtracking can simply try one path then the next upon
+failure, it is fairly straightforward to write code that matches the grammar. |
+A Predictive parser has to know what the "first set" tokens are for a symbol in
+the grammar, in order to know which function to descend into properly, when
+presented with a path. This implementation has internal comments in order to show
+how the first set tokens were determined for each path for required symbols, and
+leads to some extra complexity. |
+| Readability | Backtracking appears to be more readable and straightforward to 
+understand. As long as the path attempts are in a failable function, it can 
+attempt each function and go on to the next. This leads to leaner code that very
+closely resembles the grammar without much extra to look at. | Predictive is still
+quite readable, however the existence of the first set token checks adds a bit of
+extra content to the code. This extra checking code surrounds the descent method
+calls. |
+| Error Handling | Error handling may be more vague in a Backtracking parser. 
+Upon the choice of a path, it is possible that no path succeeds and thus a generic
+error message about not recognizing any path has to be produced. That bubbles up
+to the top of the parser in this grammar (`FILTER` and `PATH`, the topmost symbols,
+both contain different parsing paths). It is possible that the grammar went fairly
+deep into one path before failing, and that error message would be pertinent to
+show, but knowing which path's error to show can be difficult. | A Predictive
+parser is able to much more explicitly report errors, because it knows which path
+the input went down more exactly and can report what it expected and what it instead
+found with more certaintty. This is because it is not blindly attempting different
+parsing paths. |
+| Efficiency | Due to the nature of attempting different paths one at a time, and
+needing to backtrack to an earlier state before attempting a different path, a
+Backtracking parser is naturally less efficient. Especially when a failed path
+could have gone quite deep and wasted a lot of computational cycles. | A predictive
+parser, on the other hand, only ever goes forwards with certainty on each path
+chosen in the grammar. This wastes fewer cycles, and without much extra overhead
+for predicting the right paths. Noteworthy, though, is the fact that SCIM 
+filters/paths are quite small and the difference with backtracking is likely
+negligible in real world scenarios. |
 
 #### Recusive Ascent/Bottom-Up Parser
 

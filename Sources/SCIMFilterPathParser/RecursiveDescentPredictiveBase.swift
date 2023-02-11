@@ -1,7 +1,5 @@
 import Foundation
 
-// TODO: Detect and error upon ATTRNAME.subAttr[valFilter]
-
 // Uses SCIM_RFC_7644_LeftRecursionEliminatedV2.abnf
 
 /// Base implementation of a predictive recursive-descent parser. Contains
