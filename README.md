@@ -378,6 +378,7 @@ I believe that the revised, left-recursion-eliminated grammar is LL(1), used in
 this project.
 
 Some implementation differences/trade-offs:
+
 | Area | Backtracking | Predictive |
 | Difficulty | Because Backtracking can simply try one path then the next upon
 failure, it is fairly straightforward to write code that matches the grammar. |
