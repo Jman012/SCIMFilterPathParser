@@ -11,8 +11,8 @@ final class RecursiveDescentBacktrackingParserTests: XCTestCase {
 		}
 	}
 	
-	func testParseValueFilterList() throws {
-		for (expectedExpr, scimFilterString) in testCases_ValueFilterListExpression {
+	func testParseValueFilter() throws {
+		for (expectedExpr, scimFilterString) in testCases_ValueFilterExpression {
 			let parser = try RecursiveDescentBacktrackingParser(filter: scimFilterString)
 			let valFilter = try parser.parseValueFilter()
 			XCTAssertEqual(valFilter, expectedExpr, scimFilterString)

@@ -71,39 +71,41 @@ public indirect enum FilterValueExpression: Expression, CustomScimFilterStringCo
 
 public struct ValuePathExpression: Expression, CustomScimFilterStringConvertible, Hashable {
 	let attributePath: AttributePath
-	let valueFilterExpression: ValueFilterListExpression
+	let valueFilterExpression: ValueFilterExpression
 	
 	public var scimFilterString: String {
 		return "\(attributePath.scimFilterString)[\(valueFilterExpression.scimFilterString)]"
 	}
 }
 
-public struct ValueFilterListExpression: Expression, CustomScimFilterStringConvertible, Hashable {
-	let start: ValueFilterValueExpression
-	let continued: [ValueFilterListExpressionContinued]
+public struct ValueFilterExpression: Expression, CustomScimFilterStringConvertible, Hashable {
+	var anyExpr: ValueFilterAnyExpression
 	
 	public var scimFilterString: String {
-		if continued.isEmpty {
-			return "\(start.scimFilterString)"
-		} else {
-			return "\(start.scimFilterString) \(continued.scimFilterString)"
-		}
+		return anyExpr.scimFilterString
 	}
 }
 
-public struct ValueFilterListExpressionContinued: Expression, CustomScimFilterStringConvertible, Hashable {
-	let logicalOperator: LogicalOperator
-	let filter: ValueFilterValueExpression
+public struct ValueFilterAnyExpression: Expression, CustomScimFilterStringConvertible, Hashable {
+	var anyExprs: [ValueFilterAllExpression]
 	
 	public var scimFilterString: String {
-		return "\(logicalOperator.scimFilterString) \(filter.scimFilterString)"
+		return anyExprs.map({ $0.scimFilterString }).joined(separator: " or ")
+	}
+}
+
+public struct ValueFilterAllExpression: Expression, CustomScimFilterStringConvertible, Hashable {
+	var allExprs: [ValueFilterValueExpression]
+	
+	public var scimFilterString: String {
+		return allExprs.map({ $0.scimFilterString }).joined(separator: " and ")
 	}
 }
 
 public indirect enum ValueFilterValueExpression: Expression, CustomScimFilterStringConvertible, Hashable {
 	case attributeExpression(AttributeExpression)
-	case groupedValueFilter(ValueFilterListExpression)
-	case negatedGroupedValueFilter(ValueFilterListExpression)
+	case groupedValueFilter(ValueFilterExpression)
+	case negatedGroupedValueFilter(ValueFilterExpression)
 	
 	public var scimFilterString: String {
 		switch self {

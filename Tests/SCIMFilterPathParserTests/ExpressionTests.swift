@@ -45,8 +45,8 @@ final class ExpressionTests: XCTestCase {
 		}
 	}
 	
-	func testValueFilterListExpressionCustomScimFilterStringConvertible() {
-		for (expr, expected) in testCases_ValueFilterListExpression {
+	func testValueFilterExpressionCustomScimFilterStringConvertible() {
+		for (expr, expected) in testCases_ValueFilterExpression {
 			XCTAssertEqual(expected, expr.scimFilterString)
 		}
 	}

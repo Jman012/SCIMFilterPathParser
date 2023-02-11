@@ -189,8 +189,8 @@ extension RecursiveDescentPredictiveParser {
 	///
 	/// Symbol: `valFilter`
 	/// Type: Predictive
-	func parseValueFilter() throws -> ValueFilterListExpression {
-		let valFilterOption = try parseValueFilterListValue()
+	func parseValueFilter() throws -> ValueFilterExpression {
+		let valFilterValue = try parseValueFilterListValue()
 		var continued: [ValueFilterListExpressionContinued] = []
 		while currentToken == .space {
 			try self.expect(token: .space)
@@ -202,7 +202,8 @@ extension RecursiveDescentPredictiveParser {
 			continued.append(next)
 		}
 		
-		return .init(start: valFilterOption, continued: continued)
+		let valueFilterList = ValueFilterListExpression(start: valFilterValue, continued: continued)
+		return valueFilterList.toValueFilterExpression()
 	}
 	
 	/// Parses a value filter expression from the grammar.

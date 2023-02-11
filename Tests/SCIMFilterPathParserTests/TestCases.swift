@@ -68,92 +68,105 @@ let testCases_AttributeExpression: [(AttributeExpression, String)] = [
 	 "externalId ne null"),
 ]
 
-let testCases_ValueFilterListExpression: [(ValueFilterListExpression, String)] = [
-	(.init(
-		start: .attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
-		continued: []),
+let testCases_ValueFilterExpression: [(ValueFilterExpression, String)] = [
+	(.init(anyExpr: .init(anyExprs: [
+		.init(allExprs: [
+			.attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
+		]),
+	])),
 	 "userName pr"),
-	(.init(
-		start: .groupedValueFilter(.init(
-			start: .attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
-			continued: [])),
-		continued: []),
+	(.init(anyExpr: .init(anyExprs: [
+		.init(allExprs: [
+			.groupedValueFilter(.init(anyExpr: .init(anyExprs: [
+				.init(allExprs: [
+					.attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
+				]),
+			])))
+		]),
+	])),
 	 "(userName pr)"),
-	(.init(
-		start: .negatedGroupedValueFilter(.init(
-			start: .attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
-			continued: [])),
-		continued: []),
+	(.init(anyExpr: .init(anyExprs: [
+		.init(allExprs: [
+			.negatedGroupedValueFilter(.init(anyExpr: .init(anyExprs: [
+				.init(allExprs: [
+					.attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
+				]),
+			])))
+		]),
+	])),
 	 "not (userName pr)"),
-	(.init(
-		start: .attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
-		continued: [
-			.init(
-				logicalOperator: .and,
-				filter: .attributeExpression(.present(.init(attributePath: .init(attributeName: "externalId"))))),
+	(.init(anyExpr: .init(anyExprs: [
+		.init(allExprs: [
+			.attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
+			.attributeExpression(.present(.init(attributePath: .init(attributeName: "externalId")))),
 		]),
+	])),
 	 "userName pr and externalId pr"),
-	(.init(
-		start: .attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
-		continued: [
-			.init(
-				logicalOperator: .or,
-				filter: .attributeExpression(.comparison(.init(
-					attributePath: .init(attributeName: "userName"),
-					comparativeOperator: .eq,
-					comparativeValue: .null))))
+	(.init(anyExpr: .init(anyExprs: [
+		.init(allExprs: [
+			.attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
 		]),
+		.init(allExprs: [
+			.attributeExpression(.comparison(.init(
+				attributePath: .init(attributeName: "userName"),
+				comparativeOperator: .eq,
+				comparativeValue: .null))),
+		]),
+	])),
 	 "userName pr or userName eq null"),
-	(.init(
-		start: .groupedValueFilter(.init(
-			start: .attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
-			continued: [
-				.init(
-					logicalOperator: .and,
-					filter: .attributeExpression(.present(.init(attributePath: .init(attributeName: "emails"))))),
-				.init(
-					logicalOperator: .and,
-					filter: .attributeExpression(.present(.init(attributePath: .init(attributeName: "externalId")))))
-			])),
-		continued: [
-			.init(
-				logicalOperator: .or,
-				filter: .negatedGroupedValueFilter(.init(
-					start: .attributeExpression(.comparison(.init(
+	(.init(anyExpr: .init(anyExprs: [
+		.init(allExprs: [
+			.groupedValueFilter(.init(anyExpr: .init(anyExprs: [
+				.init(allExprs: [
+					.attributeExpression(.present(.init(attributePath: .init(attributeName: "userName")))),
+					.attributeExpression(.present(.init(attributePath: .init(attributeName: "emails")))),
+					.attributeExpression(.present(.init(attributePath: .init(attributeName: "externalId")))),
+				]),
+			]))),
+		]),
+		.init(allExprs: [
+			.negatedGroupedValueFilter(.init(anyExpr: .init(anyExprs: [
+				.init(allExprs: [
+					.attributeExpression(.comparison(.init(
 						attributePath: .init(attributeName: "externalId"),
 						comparativeOperator: .ne,
 						comparativeValue: .string("", #""test""#)))),
-					continued: [
-					
-					]))),
-			.init(
-				logicalOperator: .or,
-				filter: .attributeExpression(.comparison(.init(
-					attributePath: .init(attributeName: "userName"),
-					comparativeOperator: .eq,
-					comparativeValue: .string("", #""test@example.com""#))))),
-		]), #"(userName pr and emails pr and externalId pr) or not (externalId ne "test") or userName eq "test@example.com""#),
+				])
+			])))
+		]),
+		.init(allExprs: [
+			.attributeExpression(.comparison(.init(
+				attributePath: .init(attributeName: "userName"),
+				comparativeOperator: .eq,
+				comparativeValue: .string("", #""test@example.com""#)))),
+		]),
+	])),
+	 #"(userName pr and emails pr and externalId pr) or not (externalId ne "test") or userName eq "test@example.com""#),
 ]
 
 let testCases_ValuePathExpression: [(ValuePathExpression, String)] = [
 	(.init(
 		attributePath: .init(schemaUrn: "urn:ietf:params:scim:schemas:core:2.0:User", attributeName: "emails"),
-		valueFilterExpression: .init(
-			start: .attributeExpression(.comparison(.init(
-				attributePath: .init(attributeName: "type"),
-				comparativeOperator: .eq,
-				comparativeValue: .string("", #""work""#)))),
-			continued: [])),
+		valueFilterExpression: .init(anyExpr: .init(anyExprs: [
+			.init(allExprs: [
+				.attributeExpression(.comparison(.init(
+					attributePath: .init(attributeName: "type"),
+					comparativeOperator: .eq,
+					comparativeValue: .string("", #""work""#)))),
+			]),
+		]))),
 	 #"urn:ietf:params:scim:schemas:core:2.0:User:emails[type eq "work"]"#),
 	// This is valid according to the loose grammar, but should never be able to be parsed or interpreted
 	(.init(
 		attributePath: .init(schemaUrn: "urn:ietf:params:scim:schemas:core:2.0:User", attributeName: "emails", subAttributeName: "subComplexAttr"),
-		valueFilterExpression: .init(
-			start: .attributeExpression(.comparison(.init(
-				attributePath: .init(schemaUrn: "urn:test:test", attributeName: "type", subAttributeName: "nonExistent"),
-				comparativeOperator: .eq,
-				comparativeValue: .string("", #""work""#)))),
-			continued: [])),
+		valueFilterExpression: .init(anyExpr: .init(anyExprs: [
+			.init(allExprs: [
+				.attributeExpression(.comparison(.init(
+					attributePath: .init(schemaUrn: "urn:test:test", attributeName: "type", subAttributeName: "nonExistent"),
+					comparativeOperator: .eq,
+					comparativeValue: .string("", #""work""#)))),
+			]),
+		]))),
 	 #"urn:ietf:params:scim:schemas:core:2.0:User:emails.subComplexAttr[urn:test:test:type.nonExistent eq "work"]"#),
 ]
 
@@ -188,17 +201,18 @@ let testCases_FilterExpression: [(FilterExpression, String)] = [
 		.init(allExprs: [
 			.valuePathExpression(.init(
 				attributePath: .init(attributeName: "emails"),
-				valueFilterExpression: .init(
-					start: .attributeExpression(.comparison(.init(
-						attributePath: .init(attributeName: "type"),
-						comparativeOperator: .eq,
-						comparativeValue: .string("", #""work""#)))),
-					continued: [
-						.init(logicalOperator: .and, filter: .attributeExpression(.comparison(.init(
+				valueFilterExpression: .init(anyExpr: .init(anyExprs: [
+					.init(allExprs: [
+						.attributeExpression(.comparison(.init(
+							attributePath: .init(attributeName: "type"),
+							comparativeOperator: .eq,
+							comparativeValue: .string("", #""work""#)))),
+						.attributeExpression(.comparison(.init(
 							attributePath: .init(attributeName: "value"),
 							comparativeOperator: .eq,
-							comparativeValue: .string("", #""test@example.com""#))))),
-					])))
+							comparativeValue: .string("", #""test@example.com""#)))),
+					]),
+				]))))
 		])
 	])),
 	 #"emails[type eq "work" and value eq "test@example.com"]"#),
@@ -309,21 +323,25 @@ let testCases_PathExpression: [(PathExpression, String)] = [
 	 "name.familyName"),
 	(PathExpression.valuePathExpression(.init(
 		attributePath: .init(attributeName: "emails"),
-		valueFilterExpression: .init(
-			start: .attributeExpression(.comparison(.init(
-				attributePath: .init(attributeName: "type"),
-				comparativeOperator: .eq,
-				comparativeValue: .string("", #""work""#)))),
-			continued: [])), nil),
+		valueFilterExpression: .init(anyExpr: .init(anyExprs: [
+			.init(allExprs: [
+				.attributeExpression(.comparison(.init(
+					attributePath: .init(attributeName: "type"),
+					comparativeOperator: .eq,
+					comparativeValue: .string("", #""work""#)))),
+			]),
+		]))), nil),
 	 #"emails[type eq "work"]"#),
 	(PathExpression.valuePathExpression(.init(
 		attributePath: .init(attributeName: "emails"),
-		valueFilterExpression: .init(
-			start: .attributeExpression(.comparison(.init(
-				attributePath: .init(attributeName: "type"),
-				comparativeOperator: .eq,
-				comparativeValue: .string("", #""work""#)))),
-			continued: [])), "value"),
+		valueFilterExpression: .init(anyExpr: .init(anyExprs: [
+			.init(allExprs: [
+				.attributeExpression(.comparison(.init(
+					attributePath: .init(attributeName: "type"),
+					comparativeOperator: .eq,
+					comparativeValue: .string("", #""work""#)))),
+			]),
+		]))), "value"),
 	 #"emails[type eq "work"].value"#),
 	(PathExpression.attributeExpression(.comparison( .init(
 		attributePath: .init(attributeName: "schemas"),

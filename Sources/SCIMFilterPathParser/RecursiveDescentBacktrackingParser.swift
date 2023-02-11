@@ -159,7 +159,7 @@ extension RecursiveDescentBacktrackingParser {
 	///
 	/// Symbol: `valFilter`
 	/// Type: Backtracking
-	func parseValueFilter() throws -> ValueFilterListExpression {
+	func parseValueFilter() throws -> ValueFilterExpression {
 		let parseNext: () throws -> ValueFilterListExpressionContinued = {
 			try self.expect(token: .space)
 			let logicalOperator = try self.parseLogicalOperator()
@@ -168,13 +168,14 @@ extension RecursiveDescentBacktrackingParser {
 			return .init(logicalOperator: logicalOperator, filter: valFilterOption)
 		}
 		
-		let valFilterOption = try parseValueFilterListOption()
+		let valFilterValue = try parseValueFilterListOption()
 		var continued: [ValueFilterListExpressionContinued] = []
 		while let next = attemptParse({ try parseNext() }) {
 			continued.append(next)
 		}
 		
-		return .init(start: valFilterOption, continued: continued)
+		let valueFilterList = ValueFilterListExpression(start: valFilterValue, continued: continued)
+		return valueFilterList.toValueFilterExpression()
 	}
 	
 	/// Parses a value filter expression from the grammar.
