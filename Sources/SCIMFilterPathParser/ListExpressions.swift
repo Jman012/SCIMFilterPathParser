@@ -1,5 +1,7 @@
 import Foundation
 
+// Used in SCIM_RFC7644_LeftRecursionEliminatedV2.abnf for top-down parsing.
+// Converts to FilterExpression.
 internal struct FilterListExpression: Hashable {
 	let start: FilterValueExpression
 	let continued: [FilterListExpressionContinued]
@@ -26,6 +28,8 @@ internal struct FilterListExpressionContinued: Hashable {
 	let filter: FilterValueExpression
 }
 
+// Used in SCIM_RFC7644_LeftRecursionEliminatedV2.abnf for top-down parsing.
+// Converts to FilterExpression.
 internal struct ValueFilterListExpression: Hashable {
 	let start: ValueFilterValueExpression
 	let continued: [ValueFilterListExpressionContinued]
@@ -50,4 +54,14 @@ internal struct ValueFilterListExpression: Hashable {
 internal struct ValueFilterListExpressionContinued: Hashable {
 	let logicalOperator: LogicalOperator
 	let filter: ValueFilterValueExpression
+}
+
+// Used in SCIM_RFC7644_StructuredPrecedence.abnf for bottom-up parsing.
+internal struct FilterAnyListExpression: Hashable {
+	
+}
+
+// Used in SCIM_RFC7644_StructuredPrecedence.abnf for bottom-up parsing.
+internal struct FilterAllListExpression: Hashable {
+	
 }

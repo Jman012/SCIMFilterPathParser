@@ -1,0 +1,63 @@
+; https://www.rfc-editor.org/rfc/rfc7644#section-3.4.2.2
+
+FILTER      = filterAny
+filterAny   = filterAll / filterAny SP "or" SP filterAll
+filterAll   = filterValue / filterAll SP "and" SP filterValue
+filterValue = attrExp / valuePath / ["not" [SP]] "(" FILTER ")" / filterAny
+
+			; Modification from original: added optional SP between "not" and "("
+			; See RFC 7644 Errata 7319: https://www.rfc-editor.org/errata/eid7319
+			; Modification from original: refactored to include explicit operator
+			; precedence in the grammar for "and"/"or". See the original idea at
+			; https://github.com/scim2/filter-parser/blob/master/internal/spec/grammar.pegn
+
+valuePath = attrPath "[" valFilter "]"
+			; FILTER uses sub-attributes of a parent attrPath
+
+valFilter      = valFilterAny
+valFilterAny   = valFilterAll / valFilterAny SP "or" SP valFilterAll
+valFilterAll   = valFilterValue / valFilterAll SP "and" SP valFilterValue
+valFilterValue = attrExp / ["not" [SP]] "(" valFilter ")" / valFilter
+
+			; Modification from original: replaced logExp with valLogExp
+			; See RFC 7644 Errata 4690: https://www.rfc-editor.org/errata/eid4690
+			; Modification from original: added optional SP between "not" and "("
+			; See RFC 7644 Errata 7319: https://www.rfc-editor.org/errata/eid7319
+			; Modification from original: refactored to include explicit operator
+			; precedence in the grammar for "and"/"or". See the original idea at
+			; https://github.com/scim2/filter-parser/blob/master/internal/spec/grammar.pegn
+
+attrExp   = (attrPath SP "pr") /
+			(attrPath SP compareOp SP compValue)
+
+compValue = false / null / true / number / string
+			; rules from JSON (RFC 7159)
+
+compareOp = "eq" / "ne" / "co" /
+				"sw" / "ew" /
+				"gt" / "lt" /
+				"ge" / "le"
+
+attrPath  = [namestring ":"] ATTRNAME *1subAttr
+			; SCIM attribute name
+			; namestring is from URN RFC 8141
+
+			; Modification from original: changed open-ended URI to more specific
+			; namestring from the URN RFC, plus the relevant comment. The RFC
+			; does specifically indicate that a full URI (such as a URL) is not
+			; allowed.
+
+ATTRNAME  = ALPHA *(nameChar)
+
+nameChar  = "-" / "_" / DIGIT / ALPHA
+
+subAttr   = "." ATTRNAME
+			; a sub-attribute of a complex attribute
+
+
+; https://www.rfc-editor.org/rfc/rfc7644#section-3.5.2
+
+PATH      = attrPath / valuePath [subAttr] / attrExp
+
+			; Modification from original: added attrExp as an option.
+			; See RFC 7644 Errata 7122: https://www.rfc-editor.org/errata/eid7122

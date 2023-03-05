@@ -434,9 +434,12 @@ a or b and c or d and e
 due to the lack of recursion back up to `Filter` or `FilterOr` from the lower 
 paths. Instead, it would require the use of parentheses for nesting expressions.
 This was attempted for this project, but adding `FilterOr` as an option to the 
-`FilterValue` symbol lead to lead recursion again. That said, there likely is a 
-good solution to make this not left-recursive, and to preserve this form of
-enforcing the precedence, which is desired. 
+`FilterValue` symbol lead to lead left recursion again. That said, there likely 
+is a good solution to make this not left-recursive, and to preserve this form of
+enforcing the precedence, which is desired.
+
+This `Filter` -> `FilterOr` -> `FilterAnd` -> `FilterValue` design was used, 
+however, in designing the `Expression` structures for this project. 
 
 Otherwise, it seems to use [di-wu/parser](https://github.com/di-wu/parser) as
 the basis for the parsing engine. It is made by the same author. It does not
